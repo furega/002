@@ -8,7 +8,7 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from IPython.display import display
+#from IPython.display import display
 import matplotlib.pyplot as plt
 
 # Entrada do usuário (quantidade ou data mmm/yy)

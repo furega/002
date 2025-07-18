@@ -27,7 +27,7 @@ try:
             st.warning("⚠️ Data de início inválida ou no futuro.")
             st.stop()
 except Exception:
-    st.warning("⚠️ Entrada inválida. Use um número (ex: 24) ou mês no formato 'jun/24'.")
+    st.warning("⚠️ Entrada inválida. Digite a quantidade de meses (ex: 12,24, 36...) ou uma data de início no formato americano 'feb/24'.")
     st.stop()
 
 # Séries do Bacen
@@ -38,7 +38,7 @@ series = {
     'CDI': 4391,
     'POUP': 196
 }
-data_inicial = '01/01/2010'
+data_inicial = '01/01/2000'
 data_final = hoje.strftime('%d/%m/%Y')
 
 def consulta_bc(codigo_serie, data_inicial, data_final):

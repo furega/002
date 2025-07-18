@@ -1,22 +1,22 @@
-# ----------------------------------------
-# CÓDIGO FINAL VERSÃO 14-JUL-2025 COM INPUT FLEXÍVEL
-# ----------------------------------------
-#!pip install -q yfinance
-
+import streamlit as st
 import requests
 import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-#from IPython.display import display
 import matplotlib.pyplot as plt
 
-# Entrada do usuário (quantidade ou data mmm/yy)
-entrada = input("Digite a quantidade de meses (ex: 12, 24...) ou uma data de início no formato 'mmm/yy' (ex: jun/24): ").strip().lower()
+st.set_page_config(page_title="Indicadores Econômicos", layout="wide")
+
+# Entrada do usuário
+st.title("📊 Indicadores Econômicos do Brasil")
+entrada = st.text_input("Digite a quantidade de meses (ex: 12, 24...) ou uma data de início no formato 'jun/24':", "24")
 opcoes_validas = [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
 hoje = datetime.today()
 
+# Processamento da entrada
 try:
+    entrada = entrada.strip().lower()
     if entrada.isdigit() and int(entrada) in opcoes_validas:
         historico_meses = int(entrada)
         data_inicio = hoje - relativedelta(months=historico_meses + 1)
@@ -24,9 +24,11 @@ try:
         data_inicio = datetime.strptime(entrada, '%b/%y')
         historico_meses = (hoje.year - data_inicio.year) * 12 + hoje.month - data_inicio.month
         if historico_meses < 1:
-            raise ValueError("Data de início inválida ou no futuro.")
+            st.warning("⚠️ Data de início inválida ou no futuro.")
+            st.stop()
 except Exception:
-    raise ValueError("Entrada inválida. Use um número (ex: 24) ou um mês no formato 'jun/24'.")
+    st.warning("⚠️ Entrada inválida. Use um número (ex: 24) ou mês no formato 'jun/24'.")
+    st.stop()
 
 # Séries do Bacen
 series = {
@@ -36,7 +38,6 @@ series = {
     'CDI': 4391,
     'POUP': 196
 }
-
 data_inicial = '01/01/2010'
 data_final = hoje.strftime('%d/%m/%Y')
 
@@ -60,7 +61,7 @@ for nome, codigo in series.items():
     if not serie.empty:
         df_indices[nome] = serie
 
-# Agregacao mensal
+# Agregação mensal
 indices_media = ['IGPM', 'INCC', 'IPCA']
 indices_soma = ['CDI', 'POUP']
 aggs = {col: 'mean' if col in indices_media else 'sum' for col in df_indices.columns}
@@ -95,7 +96,7 @@ if 'DOLAR' in df_acumulado.columns:
     base_dolar = df_acumulado['DOLAR'].iloc[0]
     df_acumulado['DOLAR-A'] = (df_acumulado['DOLAR'] / base_dolar - 1) * 100
 
-# Ordenar colunas
+# Reorganizar colunas
 colunas_ordenadas = []
 for col in ['IGPM', 'INCC', 'IPCA', 'CDI', 'POUP', 'DOLAR', 'IBOV MES']:
     if col in df_acumulado.columns:
@@ -104,67 +105,29 @@ for col in ['IGPM', 'INCC', 'IPCA', 'CDI', 'POUP', 'DOLAR', 'IBOV MES']:
         if col_acum in df_acumulado.columns:
             colunas_ordenadas.append(col_acum)
 df_acumulado = df_acumulado[colunas_ordenadas]
-
-# Datas e formatacoes
 df_acumulado.index = df_acumulado.index.to_series().dt.strftime('%b/%y').str.lower()
 df_acumulado.index.name = 'Data'
-colunas_numericas = df_acumulado.select_dtypes(include='number').columns
-formatacoes = {col: '{:,.4f}' for col in colunas_numericas}
-if 'IBOV MES' in formatacoes:
-    formatacoes['IBOV MES'] = '{:,.2f}'
 
-# Estilo visual
-largura_coluna = '54px'
-estilos_colunas = [
-    {'selector': f'th.col{i}', 'props': [
-        ('min-width', largura_coluna),
-        ('max-width', largura_coluna),
-        ('text-align', 'center')
-    ]}
-    for i in range(len(df_acumulado.columns))
-]
+# Exibir tabela
+st.subheader("📋 Tabela Consolidada")
+st.dataframe(df_acumulado.style.format({col: '{:,.2f}' for col in df_acumulado.columns}, na_rep='-'))
 
-styled_df = df_acumulado.style \
-    .format(formatacoes, na_rep='-') \
-    .set_caption("Tabela Consolidada de Indicadores Econômicos") \
-    .set_table_styles(
-        estilos_colunas + [
-            {'selector': 'caption',
-             'props': [('caption-side', 'top'),
-                       ('font-size', '16px'),
-                       ('font-weight', 'bold'),
-                       ('text-align', 'center')]},
-            {'selector': 'thead th',
-             'props': [('background-color', 'transparent')]}
-        ],
-        overwrite=False
-    ) \
-    .set_properties(**{
-        'text-align': 'center',
-        'border': '1px solid #ccc',
-        'font-size': '13px',
-        'padding': '6px',
-        'background-color': 'transparent'
-    })
-
-display(styled_df)
-
-# Gráfico de barras acumulados
+# Gráfico de barras
 cols_acumulados = [col for col in df_acumulado.columns if col.endswith('-A')]
 df_barras = df_acumulado[cols_acumulados].copy()
 valores_finais = df_barras.iloc[-1].sort_values()
 
-plt.figure(figsize=(7, 5))
-bars = plt.bar(valores_finais.index, valores_finais.values, color='skyblue')
+st.subheader("📈 Indicadores Acumulados")
+fig, ax = plt.subplots(figsize=(7, 5))
+bars = ax.bar(valores_finais.index, valores_finais.values, color='skyblue')
 for bar in bars:
     height = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width()/2, height + 0.5, f'{height:.2f}%',
-             ha='center', va='bottom', fontsize=10)
-plt.title(f"Indicadores Acumulados dos Últimos {historico_meses} meses", fontsize=14)
-plt.ylabel("Acumulado (%)")
-plt.xticks(rotation=45)
-plt.grid(axis='y', linestyle='--', alpha=0.5)
-plt.ylim(valores_finais.min() - 4, valores_finais.max() + 6)
-plt.tight_layout()
-plt.show()
-
+    ax.text(bar.get_x() + bar.get_width()/2, height + 0.5, f'{height:.2f}%',
+            ha='center', va='bottom', fontsize=10)
+ax.set_title(f"Indicadores Acumulados dos Últimos {historico_meses} meses", fontsize=14)
+ax.set_ylabel("Acumulado (%)")
+ax.set_xticks(range(len(valores_finais.index)))
+ax.set_xticklabels(valores_finais.index, rotation=45)
+ax.grid(axis='y', linestyle='--', alpha=0.5)
+ax.set_ylim(valores_finais.min() - 4, valores_finais.max() + 6)
+st.pyplot(fig)

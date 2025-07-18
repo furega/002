@@ -10,7 +10,7 @@ st.set_page_config(page_title="Indicadores Econômicos", layout="wide")
 
 # Entrada do usuário
 st.title("📊 Indicadores Econômicos do Brasil")
-entrada = st.text_input("Digite a quantidade de meses (ex: 12, 24...) ou uma data de início no formato 'jun/24':", "24")
+entrada = st.text_input("Digite a quantidade de meses (ex: 12,24, 36...) ou uma data de início no formato americano 'feb/24':", "12")
 opcoes_validas = [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
 hoje = datetime.today()
 

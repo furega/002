@@ -76,9 +76,9 @@ ibov.index = pd.to_datetime(ibov.index)
 usdbrl.index = pd.to_datetime(usdbrl.index)
 ibov_mensal = ibov['Close'].resample('ME').last()
 usd_mensal = usdbrl['Close'].resample('ME').last()
-mes_atual = hoje.strftime('%Y-%m')
-ibov_mensal = ibov_mensal[ibov_mensal.index.strftime('%Y-%m') < mes_atual]
-usd_mensal = usd_mensal[usd_mensal.index.strftime('%Y-%m') < mes_atual]
+#mes_atual = hoje.strftime('%Y-%m')
+#ibov_mensal = ibov_mensal[ibov_mensal.index.strftime('%Y-%m') < mes_atual]
+#usd_mensal = usd_mensal[usd_mensal.index.strftime('%Y-%m') < mes_atual]
 
 df_mensal['DOLAR'] = usd_mensal
 df_mensal['IBOV MES'] = ibov_mensal
@@ -131,4 +131,5 @@ ax.set_xticklabels(valores_finais.index, rotation=45)
 ax.grid(axis='y', linestyle='--', alpha=0.5)
 ax.set_ylim(valores_finais.min() - 4, valores_finais.max() + 6)
 st.pyplot(fig)
+
 
